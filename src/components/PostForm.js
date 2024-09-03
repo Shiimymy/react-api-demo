@@ -1,21 +1,56 @@
-import React, { useState } from "react";
-import { createPost } from "../services/postService";
+import React, { useState, useEffect } from "react";
+import { createPost, updatePost } from "../services/postService";
 
-export default function PostForm({ posts, setPosts }) {
+export default function PostForm({
+  posts,
+  setPosts,
+  editingPost,
+  setEditingPost,
+}) {
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
 
+  useEffect(() => {
+    if (editingPost) {
+      setTitle(editingPost.title);
+      setBody(editingPost.body);
+    } else {
+      setTitle("");
+      setBody("");
+    }
+  }, [editingPost]);
+
   const handleSubmit = (event) => {
     event.preventDefault();
-    addPost();
+
+    if (editingPost) {
+      editPost();
+    } else {
+      addPost();
+    }
     setTitle("");
     setBody("");
+    setEditingPost(null);
   };
 
   const addPost = () => {
     createPost({ title, body })
       .then((response) => {
         setPosts([...posts, response.data]);
+      })
+      .catch((err) => {
+        console.error(err);
+      });
+  };
+
+  const editPost = () => {
+    updatePost(editingPost.id, { title, body })
+      .then((response) => {
+        setPosts(
+          posts.map((post) =>
+            post.id === editingPost.id ? response.data : post
+          )
+        );
       })
       .catch((err) => {
         console.error(err);
@@ -36,7 +71,7 @@ export default function PostForm({ posts, setPosts }) {
         onChange={(e) => setBody(e.target.value)}
       ></textarea>
       <div>
-        <button type="submit">Add Post</button>
+        <button type="submit">{editingPost ? "Edit¨Post" : "Add Post"}</button>
       </div>
     </form>
   );
